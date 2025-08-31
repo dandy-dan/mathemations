@@ -6,6 +6,7 @@ import splitKiteModule from '../modules/splitKiteIntoTriangles.js';
 import { getTriangleCentroid } from '../modules/getTriangleCoords.js';
 import createRotatePolygonAnimation from '../modules/rotatePolygonAnimation.js';
 import createTranslatePolygonAnimation from '../modules/translatePolygonAnimation.js';
+import drawArrow from '../modules/drawArrow.js';
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -24,30 +25,37 @@ function initAnimation() {
   const duration = 1000;
   const spacing = 150;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const originalCenter = { x: 120, y: 200 };
   const originalKite = kiteUtils.getKiteCoords({ sideA, sideB, apexAngleDeg, centroid: originalCenter });
   const copyCenter = { x: Math.max(...originalKite.vertices.map(v => v.x)) + spacing, y: originalCenter.y };
   const copyKite = kiteUtils.getKiteCoords({ sideA, sideB, apexAngleDeg, centroid: copyCenter });
 
-  // Draw the original kite immediately
-  ctx.beginPath();
-  ctx.moveTo(originalKite.vertices[0].x, originalKite.vertices[0].y);
-  for (let v of originalKite.vertices.slice(1)) ctx.lineTo(v.x, v.y);
-  ctx.closePath();
-  ctx.strokeStyle = 'blue';
-  ctx.lineWidth = 1;
-  ctx.stroke();
+  // Draw original kite in gray
+  function drawOriginalKite() {
+    ctx.beginPath();
+    ctx.moveTo(originalKite.vertices[0].x, originalKite.vertices[0].y);
+    for (let v of originalKite.vertices.slice(1)) ctx.lineTo(v.x, v.y);
+    ctx.closePath();
+    ctx.strokeStyle = 'gray';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'lightgray';
+    ctx.fill();
+  }
+  drawOriginalKite();
 
-  // Draw the copy kite immediately
+  // Draw copy kite in gray
   ctx.beginPath();
   ctx.moveTo(copyKite.vertices[0].x, copyKite.vertices[0].y);
   for (let v of copyKite.vertices.slice(1)) ctx.lineTo(v.x, v.y);
   ctx.closePath();
-  ctx.strokeStyle = 'blue';
+  ctx.strokeStyle = 'gray';
   ctx.lineWidth = 1;
   ctx.stroke();
+  ctx.fillStyle = 'lightgray';
+  ctx.fill();
 
   // Split copy into triangles
   const triangles = splitKiteModule.splitKiteIntoTriangles({ kiteVertices: copyKite.vertices });
@@ -56,7 +64,7 @@ function initAnimation() {
     createPolygonAnimation(ctx, tri.vertices, duration, { strokeStyle: triangleColors[i], lineWidth: 2, alpha: 1 })
   );
 
-  // Helper for rotate+translate (same as before)
+  // Rotate + translate helper
   function createRotateTranslateAnimation(triangleVertices, T2_index, T3_index, K2_vertex, K3_vertex, color) {
     const centroid = getTriangleCentroid(triangleVertices);
     const rotateAnim = createRotatePolygonAnimation(ctx, { points: triangleVertices, centroid }, 0, 180, duration, { strokeStyle: color, lineWidth: 1, alpha: 1 });
@@ -93,33 +101,67 @@ function initAnimation() {
     extraAnimations.push(rotateAnim, translateAnim);
   });
 
-  // Add final step to remove triangles
+  // Diagonal animation (draw over existing triangles, remain on final kite)
+  function createDiagonalsAnimation(diagonals, duration) {
+    let startTime = null;
+    let finished = false;
+    return {
+      reset: () => { startTime = null; finished = false; },
+      update: (timestamp) => {
+        if (!startTime) startTime = timestamp;
+        const t = Math.min((timestamp - startTime) / duration, 1);
+        if (t >= 1) finished = true;
+        return finished;
+      },
+      draw: (timestamp) => {
+        if (!startTime) startTime = timestamp;
+        const t = Math.min((timestamp - startTime) / duration, 1);
+
+        // Draw diagonals progressively over existing triangles
+        diagonals.forEach(d => {
+          drawArrow(
+            ctx,
+            d.from.x,
+            d.from.y,
+            d.from.x + (d.to.x - d.from.x) * t,
+            d.from.y + (d.to.y - d.from.y) * t,
+            2, 'red', 8
+          );
+        });
+      },
+      drawFinal: () => {
+        diagonals.forEach(d => drawArrow(ctx, d.from.x, d.from.y, d.to.x, d.to.y, 2, 'red', 8));
+      }
+    };
+  }
+
+  const diagonalAnimations = [
+    createDiagonalsAnimation([
+      { from: originalKite.vertices[0], to: originalKite.vertices[2] },
+      { from: originalKite.vertices[1], to: originalKite.vertices[3] }
+    ], duration)
+  ];
+
   const removeTrianglesAnimation = {
     reset: () => {},
     update: () => true,
     draw: () => {
-      // Clear the areas where triangles are drawn
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Redraw the original kite after removing the triangles
-      ctx.beginPath();
-      ctx.moveTo(originalKite.vertices[0].x, originalKite.vertices[0].y);
-      for (let v of originalKite.vertices.slice(1)) ctx.lineTo(v.x, v.y);
-      ctx.closePath();
-      ctx.strokeStyle = 'blue';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.fillStyle = 'blue';
-      ctx.fill();
+      drawOriginalKite();  // Triangles remain visually; diagonals remain if previously drawn
+      diagonalAnimations.forEach(anim => anim.drawFinal && anim.drawFinal());
     },
-    drawFinal: () => {}
+    drawFinal: () => {
+      drawOriginalKite();
+      diagonalAnimations.forEach(anim => anim.drawFinal && anim.drawFinal());
+    }
   };
 
   const animations = [
-    createPolygonAnimation(ctx, originalKite.vertices, duration, { strokeStyle:'blue', lineWidth:1, alpha:1 }),
-    createPolygonAnimation(ctx, copyKite.vertices, duration, { strokeStyle:'blue', lineWidth:1, alpha:1 }),
+    createPolygonAnimation(ctx, originalKite.vertices, duration, { strokeStyle:'gray', fillStyle:'lightgray', lineWidth:1, alpha:1 }),
+    createPolygonAnimation(ctx, copyKite.vertices, duration, { strokeStyle:'gray', fillStyle:'lightgray', lineWidth:1, alpha:1 }),
     ...triangleAnimations,
     ...extraAnimations,
-    removeTrianglesAnimation // Add the remove triangles animation at the end
+    ...diagonalAnimations,
+    removeTrianglesAnimation
   ];
 
   const completedMap = [
@@ -131,7 +173,6 @@ function initAnimation() {
   controller = createAnimationController(ctx, animations, completedMap);
 }
 
-// Start animation on button click
 startButton.addEventListener('click', () => {
   initAnimation();
   controller.start();
