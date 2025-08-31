@@ -57,9 +57,13 @@
     <label>Base: <input type="number" id="base" value="100"></label>
     <label>Height: <input type="number" id="height" value="150"></label>
     <label>Angle: <input type="number" id="angle" value="-50"></label>
-    <button id="startButton">Update & Restart Animation</button>
   </div>
   <canvas id="canvas" width="500" height="400"></canvas>
+  <div class = "play-buttons">
+    <button id="startButton">Start</button>
+    <button id="stepBackwardButton">&lt;</button>
+    <button id="stepForwardButton">&gt;</button>
+  </div>
   <button class="home-button" onclick="window.location.href='../index.html'">Home</button>
   <script type="module" src="parallelogram-area-animation.js"></script>
 </body>

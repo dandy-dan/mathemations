@@ -7,6 +7,13 @@ export default function createAnimationController(ctx, animations, completedMap)
     .fill(0)
     .map((_, i) => Array.from({ length: i }, (_, j) => j));
 
+  const backBtn = document.getElementById('stepBackwardButton');
+  const forwardBtn = document.getElementById('stepForwardButton');
+
+  // Disable step buttons initially
+  if (backBtn) backBtn.disabled = true;
+  if (forwardBtn) forwardBtn.disabled = true;
+
   function drawCompleted() {
     const indicesToDraw = completedMap[currentIndex] || [];
     indicesToDraw.forEach(i => {
@@ -20,6 +27,10 @@ export default function createAnimationController(ctx, animations, completedMap)
     running = true;
     animations[currentIndex].reset();
     requestAnimationFrame(runAnimation);
+
+    // Enable step buttons once animation starts
+    if (backBtn) backBtn.disabled = false;
+    if (forwardBtn) forwardBtn.disabled = false;
   }
 
   function runAnimation(timestamp) {
@@ -54,15 +65,18 @@ export default function createAnimationController(ctx, animations, completedMap)
     }
   }
 
-  window.addEventListener('keydown', (e) => {
-    if (!running) {
-      if (e.key === 'ArrowRight') {
-        nextAnimation();
-      } else if (e.key === 'ArrowLeft') {
-        prevAnimation();
-      }
-    }
-  });
+  // Attach event listeners to pre-existing buttons
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      if (!running) prevAnimation();
+    });
+  }
+
+  if (forwardBtn) {
+    forwardBtn.addEventListener('click', () => {
+      if (!running) nextAnimation();
+    });
+  }
 
   return {
     start: startCurrentAnimation,

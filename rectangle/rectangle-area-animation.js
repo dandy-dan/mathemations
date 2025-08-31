@@ -16,17 +16,12 @@ const ctx = canvas.getContext('2d');
 const widthInput = document.getElementById('rectWidth');
 const heightInput = document.getElementById('rectHeight');
 const sizeInput = document.getElementById('squareSize');
-const startBtn = document.getElementById('startBtn');
+const startBtn = document.getElementById('startButton');
 
 let animationController = null;
 
 // Draw function: sets up rectangle + grid animations
 function setupAnimations() {
-  // Canvas resize and high-DPI
-  setupResizeListener(canvas, ctx, () => {
-    animationController?.start(); // redraw current animation on resize
-  });
-
   const W = Math.max(20, Number(widthInput.value) || 360);
   const H = Math.max(20, Number(heightInput.value) || 220);
   const S = Math.max(5, Number(sizeInput.value) || 40);
@@ -57,24 +52,26 @@ function setupAnimations() {
   const polyAnim = createPolygonAnimation(ctx, rectPoints, 1200, {
     strokeStyle: COLORS.rectStroke,
     fillStyle: COLORS.rectFill,
-    lineWidth: 2,
+    lineWidth: 0.5,     // updated line width
     fillDuration: 800,
+    alpha: 1
   });
 
   const gridAnim = createGridAnimation(ctx, rect, Math.max(5, S * scale), 1400, {
     strokeStyle: COLORS.gridStroke,
-    lineWidth: 1.5,
+    lineWidth: 0.5,    // updated line width
   });
 
   animationController = createAnimationController(ctx, [polyAnim, gridAnim]);
+
+  // Setup resize listener after animation is initialized
+  setupResizeListener(canvas, ctx, () => {
+    animationController?.start();
+  });
 }
 
-// Start button
+// Only start animation when the button is clicked
 startBtn.addEventListener('click', () => {
   setupAnimations();
   animationController.start();
 });
-
-// Initial setup
-setupAnimations();
-animationController.start();

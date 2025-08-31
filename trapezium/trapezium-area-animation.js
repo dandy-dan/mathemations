@@ -46,23 +46,27 @@ function initAnimation() {
 
   const trapeziumData = getTrapeziumCoords.getTrapeziumCoordsFromBottomLeft(trapeziumParams);
 
+  // === Step 1: original trapezium ===
   const trapeziumAnimation = createPolygonAnimation(ctx, trapeziumData.points, 1000, {
-    strokeStyle: 'blue',
-    lineWidth: 3,
+    strokeStyle: '#4477AA', // accessible blue
+    fillStyle: '#88CCEE',   // light blue fill
+    lineWidth: 0.5,
     alpha: 1
   });
 
+  // === Step 2: copy next to original ===
   const copyOffsetX = 250;
   const trapeziumCopyData = {
     points: trapeziumData.points.map(p => ({ x: p.x + copyOffsetX, y: p.y })),
     centroid: { x: trapeziumData.centroid.x + copyOffsetX, y: trapeziumData.centroid.y }
   };
   const trapeziumCopyAnimation = createPolygonAnimation(ctx, trapeziumCopyData.points, 1000, {
-    strokeStyle: 'red',
-    lineWidth: 3,
+    strokeStyle: '#EE7733', // accessible orange
+    lineWidth: 0.5,
     alpha: 1
   });
 
+  // === Step 3: rotate copy 180° ===
   const rotatedCopyData = {
     points: trapeziumCopyData.points.map(p => {
       const dx = p.x - trapeziumCopyData.centroid.x;
@@ -78,11 +82,11 @@ function initAnimation() {
     0,
     180,
     1000,
-    { strokeStyle: 'red', lineWidth: 3, alpha: 1 }
+    { strokeStyle: '#EE7733', lineWidth: 0.5, alpha: 1 }
   );
 
+  // === Step 4: slide rotated trapezium to join original ===
   const blueBottomRight = trapeziumData.points[1];
-  const blueTopRight = trapeziumData.points[2];
   const redTopRight = rotatedCopyData.points[2];
 
   const dx = blueBottomRight.x - redTopRight.x;
@@ -99,27 +103,37 @@ function initAnimation() {
     rotatedCopyData.centroid,
     targetCentroid,
     1000,
-    { strokeStyle: 'red', lineWidth: 3, alpha: 1 }
+    { strokeStyle: '#EE7733', lineWidth: 0.5, alpha: 1 }
   );
 
+  // === Step 5: remove the copy, redraw original in same style ===
   const removeCopyAnimation = {
     reset: () => {},
     update: () => true,
     draw: () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
-      trapeziumData.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      trapeziumData.points.forEach((p, i) =>
+        i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)
+      );
       ctx.closePath();
-      ctx.strokeStyle = 'blue';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-      ctx.fillStyle = 'blue';
+      ctx.fillStyle = '#88CCEE';   // same as step 1
       ctx.fill();
+      ctx.strokeStyle = '#4477AA'; // same as step 1
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
     },
     drawFinal: () => {}
   };
 
-  const animations = [trapeziumAnimation, trapeziumCopyAnimation, rotateCopyAnimation, translateCopyAnimation, removeCopyAnimation];
+  const animations = [
+    trapeziumAnimation,
+    trapeziumCopyAnimation,
+    rotateCopyAnimation,
+    translateCopyAnimation,
+    removeCopyAnimation
+  ];
+
   const completedMap = [[], [0], [0], [0], [0]];
 
   controller = createAnimationController(ctx, animations, completedMap);

@@ -54,13 +54,17 @@
 <body>
   <h1>Area of a Trapezium</h1>
   <div class="controls">
-    <label>Side A: <input type="number" id="sideA" value="200"></label>
-    <label>Side B: <input type="number" id="sideB" value="75"></label>
+    <label>Side A: <input type="number" id="sideA" value="180"></label>
+    <label>Side B: <input type="number" id="sideB" value="60"></label>
     <label>Height: <input type="number" id="height" value="100"></label>
     <label>Angle: <input type="number" id="angle" value="60"></label>
-    <button id="startButton">Update & Restart Animation</button>
   </div>
   <canvas id="canvas" width="500" height="400"></canvas>
+  <div class = "play-buttons">
+    <button id="startButton">Start</button>
+    <button id="stepBackwardButton">&lt;</button>
+    <button id="stepForwardButton">&gt;</button>
+  </div>
   <button class="home-button" onclick="window.location.href='../index.html'">Home</button>
   <script type="module" src="trapezium-area-animation.js"></script>
 </body>

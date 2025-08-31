@@ -57,9 +57,13 @@
     <label>Side A: <input type="number" id="sideA" value="180" min="1"></label>
     <label>Side B: <input type="number" id="sideB" value="100" min="1"></label>
     <label>Angle (deg): <input type="number" id="angle" value="60" min="1" max="179"></label>
-    <button id="startButton">Update & Restart Animation</button>
   </div>
   <canvas id="canvas" width="500" height="400"></canvas>
+  <div class = "play-buttons">
+    <button id="startButton">Start</button>
+    <button id="stepBackwardButton">&lt;</button>
+    <button id="stepForwardButton">&gt;</button>
+  </div>
   <button class="home-button" onclick="window.location.href='../index.html'">Home</button>
   <script type="module" src="triangle-area-animation.js"></script>
 </body>

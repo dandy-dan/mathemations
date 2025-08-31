@@ -39,8 +39,9 @@ function initAnimation() {
 
   // === Step 1: original triangle ===
   const triangleAnimation = createPolygonAnimation(ctx, triangleData.points, 1000, {
-    strokeStyle: 'blue',
-    lineWidth: 1,
+    strokeStyle: '#4477AA',
+    fillStyle: '#88CCEE',
+    lineWidth: 0.5,
     alpha: 1
   });
 
@@ -51,8 +52,9 @@ function initAnimation() {
     centroid: { x: triangleData.centroid.x + copyOffsetX, y: triangleData.centroid.y }
   };
   const triangleCopyAnimation = createPolygonAnimation(ctx, triangleCopyData.points, 1000, {
-    strokeStyle: 'red',
-    lineWidth: 1,
+    strokeStyle: '#EE7733',
+    fillStyle: '#FFDDCC',
+    lineWidth: 0.5,
     alpha: 1
   });
 
@@ -72,7 +74,7 @@ function initAnimation() {
     0,
     180,
     1000,
-    { strokeStyle: 'red', lineWidth: 3, alpha: 1 }
+    { strokeStyle: '#EE7733', fillStyle: '#FFDDCC', lineWidth: 0.5, alpha: 1 }
   );
 
   // === Step 4: slide rotated triangle to join original ===
@@ -93,25 +95,27 @@ function initAnimation() {
     rotatedCopyData.centroid,
     targetCentroid,
     1000,
-    { strokeStyle: 'red', lineWidth: 3, alpha: 1 }
+    { strokeStyle: '#EE7733', fillStyle: '#FFDDCC', lineWidth: 0.5, alpha: 1 }
   );
 
-  // === Step 5: remove the copy ===
+  // === Step 5: remove the copy, redraw original triangle ===
   const removeCopyAnimation = {
     reset: () => {},
-    update: () => true,
+    update: () => true, // instantly complete
     draw: () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw blue original triangle
       ctx.beginPath();
       triangleData.points.forEach((p, i) =>
         i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)
       );
       ctx.closePath();
-      ctx.fillStyle = 'blue'; // Fill color
-      ctx.fill(); // Fill the triangle
-      ctx.strokeStyle = 'blue'; // Stroke color
-      ctx.lineWidth = 1;
-      ctx.stroke(); // Outline of the triangle
+      ctx.fillStyle = '#88CCEE';
+      ctx.fill();
+      ctx.strokeStyle = '#4477AA';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
     },
     drawFinal: () => {}
   };
@@ -126,11 +130,7 @@ function initAnimation() {
   ];
 
   const completedMap = [
-    [],
-    [0],
-    [0],
-    [0],
-    [0]
+    [], [0], [0], [0], [0]
   ];
 
   controller = createAnimationController(ctx, animations, completedMap);
@@ -140,13 +140,12 @@ function initAnimation() {
 // === Button click to start the animation ===
 startButton.addEventListener('click', initAnimation);
 
-// === Resize listener (only works if animation has been started) ===
+// === Resize listener ===
 setupResizeListener(canvas, ctx, () => {
   if (controller) {
     controller.currentIndex = 0;
     controller.start();
   } else {
-    // Optional: clear canvas on resize before animation starts
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 });

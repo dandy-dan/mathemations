@@ -56,10 +56,15 @@
   <div class="controls">
     <label>Side A: <input type="number" id="sideA" value="100"></label>
     <label>Side B: <input type="number" id="sideB" value="80"></label>
-    <label>Apex Angle: <input type="number" id="apexAngle" value="100"></label>
-    <button id="startButton">Update & Restart Animation</button>
+    <label>Top Angle: <input type="number" id="apexAngle" value="100"></label>
+
   </div>
   <canvas id="canvas" width="500" height="400"></canvas>
+  <div class = "play-buttons">
+    <button id="startButton">Start</button>
+    <button id="stepBackwardButton">&lt;</button>
+    <button id="stepForwardButton">&gt;</button>
+  </div>
   <button class="home-button" onclick="window.location.href='../index.html'">Home</button>
   <script type="module" src="kite-area-animation.js"></script>
 </body>
