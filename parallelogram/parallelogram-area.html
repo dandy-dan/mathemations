@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Area of a Parallelogram</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      background: #fafafa;
+    }
+    h1 { margin: 8px 0 0; }
+    canvas {
+      border: 1px solid #222;
+      width: 500px;
+      height: 400px;
+      background: white;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+    .controls label {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 14px;
+    }
+    .controls input {
+      width: 80px;
+      padding: 4px 6px;
+    }
+    button {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #fff;
+    }
+    .home-button {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Area of a Parallelogram</h1>
+  <div class="controls">
+    <label>Base: <input type="number" id="base" value="100"></label>
+    <label>Height: <input type="number" id="height" value="150"></label>
+    <label>Angle: <input type="number" id="angle" value="-50"></label>
+    <button id="startButton">Update & Restart Animation</button>
+  </div>
+  <canvas id="canvas" width="500" height="400"></canvas>
+  <button class="home-button" onclick="window.location.href='../index.html'">Home</button>
+  <script type="module" src="parallelogram-area-animation.js"></script>
+</body>
+</html>

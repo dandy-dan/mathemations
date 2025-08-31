@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Area of a Rectangle</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      background: #fafafa;
+    }
+    h1 { margin: 8px 0 0; }
+    canvas {
+      border: 1px solid #222;
+      width: 560px;   /* CSS pixels */
+      height: 420px;  /* CSS pixels */
+      background: white;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+    .controls label {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 14px;
+    }
+    .controls input {
+      width: 80px;
+      padding: 4px 6px;
+    }
+    button {
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #fff;
+    }
+    .home-button {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Area of a Rectangle</h1>
+  <div class="controls">
+    <label>Width: <input id="rectWidth" type="number" value="360" min="20" max="1000"/></label>
+    <label>Height: <input id="rectHeight" type="number" value="220" min="20" max="1000"/></label>
+    <label>Grid size: <input id="squareSize" type="number" value="40" min="5" max="400"/></label>
+    <button id="startBtn">Update & Restart Animation</button>
+  </div>
+  <canvas id="canvas" width="560" height="420"></canvas>
+  <button class="home-button" onclick="window.location.href='../index.html'">Home</button>
+  <script type="module" src="./rectangle-area-animation.js"></script>
+  
+</body>
+</html>
