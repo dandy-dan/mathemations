@@ -10,7 +10,7 @@ export default function drawArrow(ctx, x1, y1, x2, y2, lineWidth = 2, color = 'r
   // Calculate angle of line
   const angle = Math.atan2(y2 - y1, x2 - x1);
 
-  // Arrowhead at end (x2, y2), tip at x2,y2 pointing away from line
+  // Arrowhead at end
   ctx.beginPath();
   ctx.moveTo(x2, y2);
   ctx.lineTo(x2 - arrowSize * Math.cos(angle - Math.PI / 6), y2 - arrowSize * Math.sin(angle - Math.PI / 6));
@@ -19,7 +19,7 @@ export default function drawArrow(ctx, x1, y1, x2, y2, lineWidth = 2, color = 'r
   ctx.fillStyle = color;
   ctx.fill();
 
-  // Arrowhead at start (x1, y1), tip at x1,y1 pointing away from line
+  // Arrowhead at start
   ctx.beginPath();
   ctx.moveTo(x1, y1);
   ctx.lineTo(x1 + arrowSize * Math.cos(angle - Math.PI / 6), y1 + arrowSize * Math.sin(angle - Math.PI / 6));
