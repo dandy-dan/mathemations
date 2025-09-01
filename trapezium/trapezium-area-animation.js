@@ -24,7 +24,7 @@ function getBottomLeftPosition(sideA, verticalHeight) {
   const usableHeight = canvas.height / scale;
 
   // Shift everything left so both trapeziums fit
-  const leftShift = 70; // tweak this number if needed
+  const leftShift = 85; // tweak this number if needed
 
   return {
     x: usableWidth / 2 - sideA / 2 - leftShift,
