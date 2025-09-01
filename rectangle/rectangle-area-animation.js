@@ -20,6 +20,14 @@ const startBtn = document.getElementById('startButton');
 
 let animationController = null;
 
+// Keep canvas size fixed by resize listener
+setupResizeListener(canvas, ctx, () => {
+  ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+  if (animationController) {
+    animationController.reset();
+  }
+});
+
 function setupAnimations() {
   const W = Math.max(20, Number(widthInput.value) || 360);
   const H = Math.max(20, Number(heightInput.value) || 220);
@@ -34,8 +42,13 @@ function setupAnimations() {
 
   const drawW = Math.round(W * scale);
   const drawH = Math.round(H * scale);
-  const rectX = Math.round((canvas.clientWidth - drawW) / 2);
-  const rectY = Math.round((canvas.clientHeight - drawH) / 2);
+
+  // --- centroid at canvas center (CSS space) ---
+  const canvasCx = canvas.clientWidth / 2 - canvas.clientWidth*0.05;
+  const canvasCy = canvas.clientHeight / 2 - canvas.clientHeight*0.05;
+
+  const rectX = canvasCx - drawW / 2;
+  const rectY = canvasCy - drawH / 2;
 
   const rect = { x: rectX, y: rectY, width: drawW, height: drawH };
 
@@ -60,17 +73,10 @@ function setupAnimations() {
   });
 
   animationController = createAnimationController(ctx, [polyAnim, gridAnim]);
-
-  // Clear canvas and restart animation on resize
-  setupResizeListener(canvas, ctx, () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setupAnimations(); // Recompute positions and scaling
-    animationController.start();
-  });
 }
 
-// Only start animation when the button is clicked
 startBtn.addEventListener('click', () => {
+  ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
   setupAnimations();
   animationController.start();
 });

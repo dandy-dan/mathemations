@@ -30,7 +30,7 @@ function getBottomLeftPosition(sideA, sideB) {
   const usableWidth = canvas.width / scale;
   const usableHeight = canvas.height / scale;
 
-  const leftShift = 105; // shift triangles slightly left if needed
+  const leftShift = 65; // shift triangles slightly left if needed
   return {
     x: usableWidth / 2 - sideA / 2 - leftShift,
     y: usableHeight / 2 + sideB / 2
