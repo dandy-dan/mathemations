@@ -17,6 +17,21 @@ const startButton = document.getElementById('startButton');
 
 let controller;
 
+// Utility: center trapezium on screen
+function getBottomLeftPosition(sideA, verticalHeight) {
+  const scale = window.devicePixelRatio || 1;
+  const usableWidth = canvas.width / scale;
+  const usableHeight = canvas.height / scale;
+
+  // Shift everything left so both trapeziums fit
+  const leftShift = 70; // tweak this number if needed
+
+  return {
+    x: usableWidth / 2 - sideA / 2 - leftShift,
+    y: usableHeight / 2 + verticalHeight / 2
+  };
+}
+
 function initAnimation() {
   const sideA = parseFloat(sideAInput.value);
   const sideB = parseFloat(sideBInput.value);
@@ -30,7 +45,7 @@ function initAnimation() {
     sideB,
     verticalHeight,
     angleDeg,
-    bottomLeft: { x: 50, y: 250 }
+    bottomLeft: getBottomLeftPosition(sideA, verticalHeight)
   };
 
   const trapeziumData = getTrapeziumCoords.getTrapeziumCoordsFromBottomLeft(trapeziumParams);
@@ -43,8 +58,8 @@ function initAnimation() {
     alpha: 1
   });
 
-  // Step 2: copy next to original
-  const copyOffsetX = 250;
+  // Step 2: copy next to original (moved further apart)
+  const copyOffsetX = Math.min(canvas.width / (window.devicePixelRatio || 1) * 0.5, 250);
   const trapeziumCopyData = {
     points: trapeziumData.points.map(p => ({ x: p.x + copyOffsetX, y: p.y })),
     centroid: { x: trapeziumData.centroid.x + copyOffsetX, y: trapeziumData.centroid.y }
@@ -95,30 +110,30 @@ function initAnimation() {
     { strokeStyle: '#EE7733', fillStyle: '#EE7733', lineWidth: 0.5, alpha: 1 }
   );
 
-  // Step 5: overlay measurement lines while both trapeziums are visible
+  // Step 5: measurement lines
   function createMeasurementLinesAnimation(duration) {
     const heightLine = {
-      from: { x: trapeziumData.points[0].x, y: trapeziumData.points[0].y }, // top-left
-      to: { x: trapeziumData.points[0].x, y: trapeziumData.points[3].y },   // bottom-left
-      color: '#000000ff' // blue
+      from: trapeziumData.points[0],
+      to: { x: trapeziumData.points[0].x, y: trapeziumData.points[3].y },
+      color: '#000'
     };
 
     const sideALine = {
       from: trapeziumData.points[0],
       to: trapeziumData.points[1],
-      color: '#000000ff'
+      color: '#000'
     };
 
     const sideBLine = {
-      from: { 
-        x: targetCentroid.x + (rotatedCopyData.points[3].x - rotatedCopyData.centroid.x), 
-        y: targetCentroid.y + (rotatedCopyData.points[3].y - rotatedCopyData.centroid.y) 
+      from: {
+        x: targetCentroid.x + (rotatedCopyData.points[3].x - rotatedCopyData.centroid.x),
+        y: targetCentroid.y + (rotatedCopyData.points[3].y - rotatedCopyData.centroid.y)
       },
-      to: { 
-        x: targetCentroid.x + (rotatedCopyData.points[2].x - rotatedCopyData.centroid.x), 
-        y: targetCentroid.y + (rotatedCopyData.points[2].y - rotatedCopyData.centroid.y) 
+      to: {
+        x: targetCentroid.x + (rotatedCopyData.points[2].x - rotatedCopyData.centroid.x),
+        y: targetCentroid.y + (rotatedCopyData.points[2].y - rotatedCopyData.centroid.y)
       },
-      color: '#000000ff'
+      color: '#000'
     };
 
     const lines = [heightLine, sideALine, sideBLine];
@@ -157,7 +172,7 @@ function initAnimation() {
 
   const measurementLinesAnimation = createMeasurementLinesAnimation(1000);
 
-  // Step 6: remove copy, redraw original trapezium
+  // Step 6: remove copy, redraw original
   const removeCopyAnimation = {
     reset: () => {},
     update: () => true,
@@ -177,64 +192,59 @@ function initAnimation() {
     drawFinal: () => {}
   };
 
- // ===== Animation sequence =====
-const animations = [
-  trapeziumAnimation,
-  trapeziumCopyAnimation,
-  rotateCopyAnimation,
-  translateCopyAnimation,
-  {
-    // Draw measurement lines while both trapeziums are visible
-    reset: () => measurementLinesAnimation.reset(),
-    update: (timestamp) => measurementLinesAnimation.update(timestamp),
-    draw: (timestamp) => {
-      trapeziumAnimation.drawFinal();
-      translateCopyAnimation.drawFinal();
-      measurementLinesAnimation.draw(timestamp);
+  // ===== Animation sequence =====
+  const animations = [
+    trapeziumAnimation,
+    trapeziumCopyAnimation,
+    rotateCopyAnimation,
+    translateCopyAnimation,
+    {
+      reset: () => measurementLinesAnimation.reset(),
+      update: (timestamp) => measurementLinesAnimation.update(timestamp),
+      draw: (timestamp) => {
+        trapeziumAnimation.drawFinal();
+        translateCopyAnimation.drawFinal();
+        measurementLinesAnimation.draw(timestamp);
+      },
+      drawFinal: () => {
+        trapeziumAnimation.drawFinal();
+        translateCopyAnimation.drawFinal();
+        measurementLinesAnimation.drawFinal();
+      }
     },
-    drawFinal: () => {
-      trapeziumAnimation.drawFinal();
-      translateCopyAnimation.drawFinal();
-      measurementLinesAnimation.drawFinal();
+    {
+      reset: () => {},
+      update: () => true,
+      draw: () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        trapeziumData.points.forEach((p, i) =>
+          i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)
+        );
+        ctx.closePath();
+        ctx.fillStyle = '#88CCEE';
+        ctx.fill();
+        ctx.strokeStyle = '#4477AA';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        measurementLinesAnimation.drawFinal();
+      },
+      drawFinal: () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        trapeziumData.points.forEach((p, i) =>
+          i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)
+        );
+        ctx.closePath();
+        ctx.fillStyle = '#88CCEE';
+        ctx.fill();
+        ctx.strokeStyle = '#4477AA';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        measurementLinesAnimation.drawFinal();
+      }
     }
-  },
-  {
-    // Remove copy but keep arrows visible
-    reset: () => {},
-    update: () => true,
-    draw: () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath();
-      trapeziumData.points.forEach((p, i) =>
-        i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)
-      );
-      ctx.closePath();
-      ctx.fillStyle = '#88CCEE';
-      ctx.fill();
-      ctx.strokeStyle = '#4477AA';
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
-      // Overlay arrows
-      measurementLinesAnimation.drawFinal();
-    },
-    drawFinal: () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath();
-      trapeziumData.points.forEach((p, i) =>
-        i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)
-      );
-      ctx.closePath();
-      ctx.fillStyle = '#88CCEE';
-      ctx.fill();
-      ctx.strokeStyle = '#4477AA';
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
-      // Overlay arrows
-      measurementLinesAnimation.drawFinal();
-    }
-  }
-];
-
+  ];
 
   const completedMap = [[], [0], [0], [0], [0], [0]];
 

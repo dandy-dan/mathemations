@@ -11,15 +11,22 @@
       flex-direction: column;
       align-items: center;
       gap: 12px;
-      padding: 20px;
+      padding: 12px;
       background: #fafafa;
+      margin: 0;
     }
-    h1 { margin: 8px 0 0; }
+    h1 { 
+      margin: 8px 0 0; 
+      text-align: center;
+      font-size: clamp(1.2rem, 4vw, 2rem);
+    }
     canvas {
       border: 1px solid #222;
-      width: 500px;
-      height: 400px;
       background: white;
+      max-width: 100%;
+      height: auto;
+      aspect-ratio: 5 / 4;
+      display: block;
     }
     .controls {
       display: flex;
@@ -27,6 +34,7 @@
       gap: 10px;
       align-items: center;
       justify-content: center;
+      max-width: 100%;
     }
     .controls label {
       display: inline-flex;
@@ -35,8 +43,14 @@
       font-size: 14px;
     }
     .controls input {
-      width: 80px;
+      width: 70px;
       padding: 4px 6px;
+      font-size: 14px;
+    }
+    .play-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
     }
     button {
       padding: 8px 14px;
@@ -47,20 +61,20 @@
       background: #fff;
     }
     .home-button {
-      margin-bottom: 10px;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <h1>Area of a Trapezium</h1>
   <div class="controls">
-    <label>Side A: <input type="number" id="sideA" value="180"></label>
-    <label>Side B: <input type="number" id="sideB" value="60"></label>
-    <label>Height: <input type="number" id="height" value="100"></label>
+    <label>Side A: <input type="number" id="sideA" value="120"></label>
+    <label>Side B: <input type="number" id="sideB" value="40"></label>
+    <label>Height: <input type="number" id="height" value="70"></label>
     <label>Angle: <input type="number" id="angle" value="60"></label>
   </div>
-  <canvas id="canvas" width="500" height="400"></canvas>
-  <div class = "play-buttons">
+  <canvas id="canvas"></canvas>
+  <div class="play-buttons">
     <button id="startButton">Start</button>
     <button id="stepBackwardButton">&lt;</button>
     <button id="stepForwardButton">&gt;</button>
