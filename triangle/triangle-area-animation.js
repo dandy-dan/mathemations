@@ -21,9 +21,19 @@ function getPerpendicularFoot(top, baseLeft, baseRight) {
   const dx = baseRight.x - baseLeft.x;
   const dy = baseRight.y - baseLeft.y;
   const t = ((top.x - baseLeft.x) * dx + (top.y - baseLeft.y) * dy) / (dx * dx + dy * dy);
+  return { x: baseLeft.x + t * dx, y: baseLeft.y + t * dy };
+}
+
+// Utility: get bottom-left position dynamically and shift left if needed
+function getBottomLeftPosition(sideA, sideB) {
+  const scale = window.devicePixelRatio || 1;
+  const usableWidth = canvas.width / scale;
+  const usableHeight = canvas.height / scale;
+
+  const leftShift = 105; // shift triangles slightly left if needed
   return {
-    x: baseLeft.x + t * dx,
-    y: baseLeft.y + t * dy
+    x: usableWidth / 2 - sideA / 2 - leftShift,
+    y: usableHeight / 2 + sideB / 2
   };
 }
 
@@ -32,21 +42,20 @@ function initAnimation() {
   const sideB = parseFloat(sideBInput.value);
   const angleDeg = parseFloat(angleInput.value);
 
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   const triangleParams = {
     sideA,
     sideB,
     angleDeg,
-    bottomLeft: { x: 50, y: 250 }
+    bottomLeft: getBottomLeftPosition(sideA, sideB)
   };
 
   const triangleDataRaw = getTriangleCoords.getTriangleCoordsFromBottomLeft(triangleParams);
-
   const triangleData = {
     points: triangleDataRaw.vertices,
     centroid: triangleDataRaw.centroid
   };
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Step 1: original triangle
   const triangleAnimation = createPolygonAnimation(ctx, triangleData.points, 1000, {
@@ -56,8 +65,8 @@ function initAnimation() {
     alpha: 1
   });
 
-  // Step 2: copy next to original
-  const copyOffsetX = 250;
+  // Step 2: copy next to original (adjustable spacing)
+  const copyOffsetX = Math.min(canvas.width / (window.devicePixelRatio || 1) * 0.45, 250); // smaller → closer
   const triangleCopyData = {
     points: triangleData.points.map(p => ({ x: p.x + copyOffsetX, y: p.y })),
     centroid: { x: triangleData.centroid.x + copyOffsetX, y: triangleData.centroid.y }
@@ -105,24 +114,15 @@ function initAnimation() {
     { strokeStyle: '#EE7733', fillStyle: '#FFDDCC', lineWidth: 0.5, alpha: 1 }
   );
 
-  // Step 5: overlay measurement lines (perpendicular height + side A)
+  // Step 5: measurement lines
   function createMeasurementLinesAnimation(duration) {
-    const baseLeft = triangleData.points[0];   // bottom-left
-    const baseRight = triangleData.points[1];  // bottom-right
-    const topVertex = triangleData.points[2];  // top vertex
+    const baseLeft = triangleData.points[0];
+    const baseRight = triangleData.points[1];
+    const topVertex = triangleData.points[2];
     const foot = getPerpendicularFoot(topVertex, baseLeft, baseRight);
 
-    const heightLine = {
-      from: topVertex,
-      to: foot,
-      color: '#0072B2' // blue
-    };
-    const sideALine = {
-      from: baseLeft,
-      to: baseRight,
-      color: '#009E73' // green
-    };
-
+    const heightLine = { from: topVertex, to: foot, color: '#0072B2' };
+    const sideALine = { from: baseLeft, to: baseRight, color: '#009E73' };
     const lines = [heightLine, sideALine];
     let startTime = null;
 
@@ -150,9 +150,7 @@ function initAnimation() {
         });
       },
       drawFinal: () => {
-        lines.forEach(line => {
-          drawArrow(ctx, line.from.x, line.from.y, line.to.x, line.to.y, 2, line.color, 8);
-        });
+        lines.forEach(line => drawArrow(ctx, line.from.x, line.from.y, line.to.x, line.to.y, 2, line.color, 8));
       }
     };
   }
@@ -166,9 +164,7 @@ function initAnimation() {
     draw: () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
-      triangleData.points.forEach((p, i) =>
-        i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)
-      );
+      triangleData.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
       ctx.closePath();
       ctx.fillStyle = '#88CCEE';
       ctx.fill();
@@ -180,20 +176,18 @@ function initAnimation() {
     drawFinal: () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.beginPath();
-      triangleData.points.forEach((p, i) =>
-        i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)
-      );
+      triangleData.points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
       ctx.closePath();
       ctx.fillStyle = '#88CCEE';
-      ctx.fill();
       ctx.strokeStyle = '#4477AA';
       ctx.lineWidth = 0.5;
+      ctx.fill();
       ctx.stroke();
       measurementLinesAnimation.drawFinal();
     }
   };
 
-  // ===== Animation sequence =====
+  // Animation sequence
   const animations = [
     triangleAnimation,
     triangleCopyAnimation,
@@ -222,6 +216,7 @@ function initAnimation() {
   controller.start();
 }
 
+// Event listeners
 startButton.addEventListener('click', initAnimation);
 setupResizeListener(canvas, ctx, () => {
   if (controller) {
