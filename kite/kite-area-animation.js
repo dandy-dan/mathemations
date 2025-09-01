@@ -56,7 +56,7 @@ function initAnimation() {
   const sideB = parseFloat(sideBInput.value);
   const apexAngleDeg = parseFloat(apexAngleInput.value);
   const duration = 1000;
-  const leftShift = 60; // adjust how far left the animation moves
+  const leftShift = 50; // adjust how far left the animation moves
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
