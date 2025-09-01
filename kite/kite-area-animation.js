@@ -18,26 +18,57 @@ const startButton = document.getElementById('startButton');
 
 let controller;
 
+// Helper: dynamically compute kite centroids with left shift
+function getKiteCentroids(sideA, sideB, leftShift = 0) {
+  const scale = window.devicePixelRatio || 1;
+  const usableWidth = canvas.width / scale;
+  const usableHeight = canvas.height / scale;
+  const spacing = Math.min(150, usableWidth * 0.2);
+
+  const originalCenter = {
+    x: usableWidth / 2 - spacing / 2 - leftShift, // shifted left
+    y: usableHeight / 2
+  };
+
+  const copyCenter = {
+    x: originalCenter.x + sideA + spacing,
+    y: originalCenter.y
+  };
+
+  return { originalCenter, copyCenter };
+}
+
+// Draw a kite
+function drawKite(kite, stroke = 'gray', fill = 'lightgray') {
+  ctx.beginPath();
+  ctx.moveTo(kite.vertices[0].x, kite.vertices[0].y);
+  for (let v of kite.vertices.slice(1)) ctx.lineTo(v.x, v.y);
+  ctx.closePath();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = fill;
+  ctx.fill();
+}
+
 function initAnimation() {
   const sideA = parseFloat(sideAInput.value);
   const sideB = parseFloat(sideBInput.value);
   const apexAngleDeg = parseFloat(apexAngleInput.value);
   const duration = 1000;
-  const spacing = 150;
+  const leftShift = 60; // adjust how far left the animation moves
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const originalCenter = { x: 120, y: 200 };
+  const { originalCenter, copyCenter } = getKiteCentroids(sideA, sideB, leftShift);
+
+  // Generate original and copy kite coordinates
   const originalKite = kiteUtils.getKiteCoords({
     sideA,
     sideB,
     apexAngleDeg,
     centroid: originalCenter
   });
-  const copyCenter = {
-    x: Math.max(...originalKite.vertices.map(v => v.x)) + spacing,
-    y: originalCenter.y
-  };
   const copyKite = kiteUtils.getKiteCoords({
     sideA,
     sideB,
@@ -45,37 +76,12 @@ function initAnimation() {
     centroid: copyCenter
   });
 
-  // Draw original kite in gray
-  function drawOriginalKite() {
-    ctx.beginPath();
-    ctx.moveTo(originalKite.vertices[0].x, originalKite.vertices[0].y);
-    for (let v of originalKite.vertices.slice(1)) ctx.lineTo(v.x, v.y);
-    ctx.closePath();
-    ctx.strokeStyle = 'gray';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = 'lightgray';
-    ctx.fill();
-  }
-  drawOriginalKite();
-
-  // Draw copy kite in gray
-  ctx.beginPath();
-  ctx.moveTo(copyKite.vertices[0].x, copyKite.vertices[0].y);
-  for (let v of copyKite.vertices.slice(1)) ctx.lineTo(v.x, v.y);
-  ctx.closePath();
-  ctx.strokeStyle = 'gray';
-  ctx.lineWidth = 1;
-  ctx.stroke();
-  ctx.fillStyle = 'lightgray';
-  ctx.fill();
+  drawKite(originalKite);
+  drawKite(copyKite);
 
   // Split copy into triangles
-  const triangles = splitKiteModule.splitKiteIntoTriangles({
-    kiteVertices: copyKite.vertices
-  });
+  const triangles = splitKiteModule.splitKiteIntoTriangles({ kiteVertices: copyKite.vertices });
 
-  // Define stroke and fill colors for triangles
   const triangleColors = ['#0072B2', '#E69F00', '#D55E00', '#009E73'];
   const triangleFillColors = [
     'rgba(0,114,178,0.3)',
@@ -84,24 +90,17 @@ function initAnimation() {
     'rgba(0,158,115,0.3)'
   ];
 
-  // Create filled triangle animations
-    const triangleAnimations = triangles.map((tri, i) =>
-      createPolygonAnimation(ctx, tri.vertices, duration, {
-        strokeStyle: triangleColors[i],
-        fillStyle: triangleFillColors[i],
-        lineWidth: 0.5,  // Adjusted line thickness
-        alpha: 1
-      })
-    );
-  // Rotate + translate helper
-  function createRotateTranslateAnimation(
-    triangleVertices,
-    T2_index,
-    T3_index,
-    K2_vertex,
-    K3_vertex,
-    color
-  ) {
+  const triangleAnimations = triangles.map((tri, i) =>
+    createPolygonAnimation(ctx, tri.vertices, duration, {
+      strokeStyle: triangleColors[i],
+      fillStyle: triangleFillColors[i],
+      lineWidth: 0.5,
+      alpha: 1
+    })
+  );
+
+  // Rotate + translate triangles into original kite
+  function createRotateTranslateAnimation(triangleVertices, T2_index, T3_index, K2_vertex, K3_vertex, color) {
     const centroid = getTriangleCentroid(triangleVertices);
     const rotateAnim = createRotatePolygonAnimation(
       ctx,
@@ -127,8 +126,7 @@ function initAnimation() {
       x: K3_vertex.x - K2_vertex.x,
       y: K3_vertex.y - K2_vertex.y
     };
-    const deltaAngle =
-      Math.atan2(kiteVec.y, kiteVec.x) - Math.atan2(triVec.y, triVec.x);
+    const deltaAngle = Math.atan2(kiteVec.y, kiteVec.x) - Math.atan2(triVec.y, triVec.x);
     const cos = Math.cos(deltaAngle);
     const sin = Math.sin(deltaAngle);
     const finalVertices = translatedVertices.map(v => {
@@ -140,10 +138,8 @@ function initAnimation() {
       };
     });
     const finalCentroid = {
-      x:
-        (finalVertices[0].x + finalVertices[1].x + finalVertices[2].x) / 3,
-      y:
-        (finalVertices[0].y + finalVertices[1].y + finalVertices[2].y) / 3
+      x: (finalVertices[0].x + finalVertices[1].x + finalVertices[2].x) / 3,
+      y: (finalVertices[0].y + finalVertices[1].y + finalVertices[2].y) / 3
     };
     const translateAnim = createTranslatePolygonAnimation(
       ctx,
@@ -176,68 +172,56 @@ function initAnimation() {
     extraAnimations.push(rotateAnim, translateAnim);
   });
 
-  // Diagonal animation
-  function createDiagonalsAnimation(diagonals, duration, lineWidth = 2, color = 'red', arrowSize = 8) {
-    let startTime = null;
-    let finished = false;
-    return {
-      reset: () => { startTime = null; finished = false; },
-      update: timestamp => {
-        if (!startTime) startTime = timestamp;
-        const t = Math.min((timestamp - startTime) / duration, 1);
-        if (t >= 1) finished = true;
-        return finished;
-      },
-      draw: timestamp => {
-        if (!startTime) startTime = timestamp;
-        const t = Math.min((timestamp - startTime) / duration, 1);
-        diagonals.forEach(d => {
-          const x2 = d.from.x + (d.to.x - d.from.x) * t;
-          const y2 = d.from.y + (d.to.y - d.from.y) * t;
-          drawArrow(ctx, d.from.x, d.from.y, x2, y2, lineWidth, color, arrowSize);
-        });
-      },
-      drawFinal: () => {
-        diagonals.forEach(d => {
-          drawArrow(ctx, d.from.x, d.from.y, d.to.x, d.to.y, lineWidth, color, arrowSize);
-        });
-      }
-    };
-  }
-
   const diagonalAnimations = [
-    createDiagonalsAnimation([
-      { from: originalKite.vertices[0], to: originalKite.vertices[2] },
-      { from: originalKite.vertices[1], to: originalKite.vertices[3] }
-    ], duration)
+    (() => {
+      let startTime = null;
+      let finished = false;
+      return {
+        reset: () => { startTime = null; finished = false; },
+        update: timestamp => {
+          if (!startTime) startTime = timestamp;
+          const t = Math.min((timestamp - startTime) / duration, 1);
+          if (t >= 1) finished = true;
+          return finished;
+        },
+        draw: timestamp => {
+          if (!startTime) startTime = timestamp;
+          const t = Math.min((timestamp - startTime) / duration, 1);
+          [
+            { from: originalKite.vertices[0], to: originalKite.vertices[2] },
+            { from: originalKite.vertices[1], to: originalKite.vertices[3] }
+          ].forEach(d => {
+            const x2 = d.from.x + (d.to.x - d.from.x) * t;
+            const y2 = d.from.y + (d.to.y - d.from.y) * t;
+            drawArrow(ctx, d.from.x, d.from.y, x2, y2, 2, 'red', 8);
+          });
+        },
+        drawFinal: () => {
+          [
+            { from: originalKite.vertices[0], to: originalKite.vertices[2] },
+            { from: originalKite.vertices[1], to: originalKite.vertices[3] }
+          ].forEach(d => drawArrow(ctx, d.from.x, d.from.y, d.to.x, d.to.y, 2, 'red', 8));
+        }
+      };
+    })()
   ];
 
   const removeTrianglesAnimation = {
     reset: () => {},
     update: () => true,
     draw: () => {
-      drawOriginalKite();
+      drawKite(originalKite);
       diagonalAnimations.forEach(anim => anim.drawFinal && anim.drawFinal());
     },
     drawFinal: () => {
-      drawOriginalKite();
+      drawKite(originalKite);
       diagonalAnimations.forEach(anim => anim.drawFinal && anim.drawFinal());
     }
   };
 
   const animations = [
-    createPolygonAnimation(ctx, originalKite.vertices, duration, {
-      strokeStyle: 'gray',
-      fillStyle: 'lightgray',
-      lineWidth: 1,
-      alpha: 1
-    }),
-    createPolygonAnimation(ctx, copyKite.vertices, duration, {
-      strokeStyle: 'gray',
-      fillStyle: 'lightgray',
-      lineWidth: 1,
-      alpha: 1
-    }),
+    createPolygonAnimation(ctx, originalKite.vertices, duration, { strokeStyle: 'gray', fillStyle: 'lightgray', lineWidth: 1, alpha: 1 }),
+    createPolygonAnimation(ctx, copyKite.vertices, duration, { strokeStyle: 'gray', fillStyle: 'lightgray', lineWidth: 1, alpha: 1 }),
     ...triangleAnimations,
     ...extraAnimations,
     ...diagonalAnimations,
@@ -257,4 +241,9 @@ function initAnimation() {
 startButton.addEventListener('click', () => {
   initAnimation();
   controller.start();
+});
+
+setupResizeListener(canvas, ctx, () => {
+  initAnimation();
+  if (controller) controller.start();
 });

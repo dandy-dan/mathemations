@@ -20,7 +20,6 @@ const startBtn = document.getElementById('startButton');
 
 let animationController = null;
 
-// Draw function: sets up rectangle + grid animations
 function setupAnimations() {
   const W = Math.max(20, Number(widthInput.value) || 360);
   const H = Math.max(20, Number(heightInput.value) || 220);
@@ -32,15 +31,13 @@ function setupAnimations() {
     (canvas.clientWidth - margin * 2) / W,
     (canvas.clientHeight - margin * 2) / H
   );
+
   const drawW = Math.round(W * scale);
   const drawH = Math.round(H * scale);
+  const rectX = Math.round((canvas.clientWidth - drawW) / 2);
+  const rectY = Math.round((canvas.clientHeight - drawH) / 2);
 
-  const rect = {
-    x: Math.round((canvas.clientWidth - drawW) / 2),
-    y: Math.round((canvas.clientHeight - drawH) / 2),
-    width: drawW,
-    height: drawH,
-  };
+  const rect = { x: rectX, y: rectY, width: drawW, height: drawH };
 
   const rectPoints = [
     { x: rect.x, y: rect.y },
@@ -52,21 +49,23 @@ function setupAnimations() {
   const polyAnim = createPolygonAnimation(ctx, rectPoints, 1200, {
     strokeStyle: COLORS.rectStroke,
     fillStyle: COLORS.rectFill,
-    lineWidth: 0.5,     // updated line width
+    lineWidth: 0.5,
     fillDuration: 800,
     alpha: 1
   });
 
   const gridAnim = createGridAnimation(ctx, rect, Math.max(5, S * scale), 1400, {
     strokeStyle: COLORS.gridStroke,
-    lineWidth: 0.5,    // updated line width
+    lineWidth: 0.5,
   });
 
   animationController = createAnimationController(ctx, [polyAnim, gridAnim]);
 
-  // Setup resize listener after animation is initialized
+  // Clear canvas and restart animation on resize
   setupResizeListener(canvas, ctx, () => {
-    animationController?.start();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setupAnimations(); // Recompute positions and scaling
+    animationController.start();
   });
 }
 

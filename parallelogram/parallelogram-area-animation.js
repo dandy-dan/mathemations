@@ -11,10 +11,23 @@ const ctx = canvas.getContext('2d');
 const baseInput = document.getElementById('base');
 const heightInput = document.getElementById('height');
 const angleInput = document.getElementById('angle');
-const slicesInput = document.getElementById('slices'); // new input
+const slicesInput = document.getElementById('slices');
 const startButton = document.getElementById('startButton');
 
 let controller;
+
+// Utility: bottom-left position dynamically
+function getBottomLeftPosition(baseLength, verticalHeight) {
+  const scale = window.devicePixelRatio || 1;
+  const usableWidth = canvas.width / scale;
+  const usableHeight = canvas.height / scale;
+
+  const leftShift = 0; // shift left so the parallelogram is fully visible
+  return {
+    x: usableWidth / 2 - baseLength / 2 - leftShift,
+    y: usableHeight / 2 + verticalHeight / 2
+  };
+}
 
 function initAnimation() {
   const baseLength = parseFloat(baseInput.value);
@@ -24,12 +37,13 @@ function initAnimation() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Parallelogram coordinates
+  const bottomLeft = getBottomLeftPosition(baseLength, verticalHeight);
+
   const parallelogramPoints = getParallelogramCoords.getParallelogramCoordsFromBottomLeft({
     baseLength,
     verticalHeight,
     angleDeg,
-    bottomLeft: { x: 225, y: 260 },
+    bottomLeft,
     canvasHeight: canvas.height
   });
 
@@ -38,14 +52,14 @@ function initAnimation() {
   const base = parallelogramPoints[1].x - parallelogramPoints[0].x;
   const height = parallelogramPoints[0].y - parallelogramPoints[3].y;
 
-  // Step 1: Parallelogram outline
-  const parallelogramAnimation = createPolygonAnimation(ctx, parallelogramPoints, 1500, { 
+  // Step 1: parallelogram outline
+  const parallelogramAnimation = createPolygonAnimation(ctx, parallelogramPoints, 1500, {
     strokeStyle: '#b9e5ffff',
     lineWidth: 2,
     fillStyle: null
   });
 
-  // Step 2: Progressive fill of slices inside parallelogram
+  // Step 2: progressive fill of slices
   const slicesDynamic = createSliceSlideAnimation(
     ctx,
     parallelogramPoints,
@@ -53,7 +67,7 @@ function initAnimation() {
     base, height,
     slicesCount,
     1500,
-    { fillStyle: 'rgba(199, 254, 253, 0.8)', lineWidth: 0.5 } // 0.5px border
+    { fillStyle: 'rgba(199, 254, 253, 0.8)', lineWidth: 0.5 }
   );
 
   const step2Animation = {
@@ -64,7 +78,7 @@ function initAnimation() {
     drawFinal: () => slicesDynamic.drawSlicesInParallelogram()
   };
 
-  // Step 3: Slide slices into rectangle while keeping parallelogram outline
+  // Step 3: slide slices into rectangle
   const slideSlicesAnimation = createSliceSlideAnimation(
     ctx,
     parallelogramPoints,
@@ -72,7 +86,7 @@ function initAnimation() {
     base, height,
     slicesCount,
     4000,
-    { fillStyle: 'rgba(199, 254, 253, 0.8)', lineWidth: 0.5 } // 0.5px border
+    { fillStyle: 'rgba(199, 254, 253, 0.8)', lineWidth: 0.5 }
   );
 
   const step3Animation = {
@@ -91,7 +105,7 @@ function initAnimation() {
     }
   };
 
-  // Step 4: Measurement arrows + final rectangle slices
+  // Step 4: measurement lines
   function createMeasurementLinesAnimation(duration) {
     const heightLine = { from: { x: rectX, y: rectY }, to: { x: rectX, y: rectY + height }, color: '#000000ff' };
     const baseLine = { from: { x: rectX, y: rectY + height }, to: { x: rectX + base, y: rectY + height }, color: '#000000ff' };
