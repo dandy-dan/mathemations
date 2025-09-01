@@ -40,7 +40,7 @@ function initAnimation() {
 
   // Step 1: Parallelogram outline
   const parallelogramAnimation = createPolygonAnimation(ctx, parallelogramPoints, 1500, { 
-    strokeStyle: '#0072B2', // dark blue
+    strokeStyle: '#b9e5ffff',
     lineWidth: 2,
     fillStyle: null
   });

@@ -51,6 +51,7 @@ function initAnimation() {
   };
   const trapeziumCopyAnimation = createPolygonAnimation(ctx, trapeziumCopyData.points, 1000, {
     strokeStyle: '#EE7733',
+    fillStyle: '#EE7733',
     lineWidth: 0.5,
     alpha: 1
   });
@@ -70,7 +71,7 @@ function initAnimation() {
     0,
     180,
     1000,
-    { strokeStyle: '#EE7733', lineWidth: 0.5, alpha: 1 }
+    { strokeStyle: '#EE7733', fillStyle: '#EE7733', lineWidth: 0.5, alpha: 1 }
   );
 
   // Step 4: slide rotated trapezium to join original
@@ -91,7 +92,7 @@ function initAnimation() {
     rotatedCopyData.centroid,
     targetCentroid,
     1000,
-    { strokeStyle: '#EE7733', lineWidth: 0.5, alpha: 1 }
+    { strokeStyle: '#EE7733', fillStyle: '#EE7733', lineWidth: 0.5, alpha: 1 }
   );
 
   // Step 5: overlay measurement lines while both trapeziums are visible
@@ -99,13 +100,13 @@ function initAnimation() {
     const heightLine = {
       from: { x: trapeziumData.points[0].x, y: trapeziumData.points[0].y }, // top-left
       to: { x: trapeziumData.points[0].x, y: trapeziumData.points[3].y },   // bottom-left
-      color: '#0072B2' // blue
+      color: '#000000ff' // blue
     };
 
     const sideALine = {
       from: trapeziumData.points[0],
       to: trapeziumData.points[1],
-      color: '#009E73' // green
+      color: '#000000ff'
     };
 
     const sideBLine = {
@@ -117,7 +118,7 @@ function initAnimation() {
         x: targetCentroid.x + (rotatedCopyData.points[2].x - rotatedCopyData.centroid.x), 
         y: targetCentroid.y + (rotatedCopyData.points[2].y - rotatedCopyData.centroid.y) 
       },
-      color: '#E69F00' // orange
+      color: '#000000ff'
     };
 
     const lines = [heightLine, sideALine, sideBLine];

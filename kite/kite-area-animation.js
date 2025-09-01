@@ -74,15 +74,25 @@ function initAnimation() {
   const triangles = splitKiteModule.splitKiteIntoTriangles({
     kiteVertices: copyKite.vertices
   });
-  const triangleColors = ['#0072B2', '#E69F00', '#D55E00', '#009E73'];
-  const triangleAnimations = triangles.map((tri, i) =>
-    createPolygonAnimation(ctx, tri.vertices, duration, {
-      strokeStyle: triangleColors[i],
-      lineWidth: 2,
-      alpha: 1
-    })
-  );
 
+  // Define stroke and fill colors for triangles
+  const triangleColors = ['#0072B2', '#E69F00', '#D55E00', '#009E73'];
+  const triangleFillColors = [
+    'rgba(0,114,178,0.3)',
+    'rgba(230,159,0,0.3)',
+    'rgba(213,94,0,0.3)',
+    'rgba(0,158,115,0.3)'
+  ];
+
+  // Create filled triangle animations
+    const triangleAnimations = triangles.map((tri, i) =>
+      createPolygonAnimation(ctx, tri.vertices, duration, {
+        strokeStyle: triangleColors[i],
+        fillStyle: triangleFillColors[i],
+        lineWidth: 0.5,  // Adjusted line thickness
+        alpha: 1
+      })
+    );
   // Rotate + translate helper
   function createRotateTranslateAnimation(
     triangleVertices,
@@ -131,11 +141,9 @@ function initAnimation() {
     });
     const finalCentroid = {
       x:
-        (finalVertices[0].x + finalVertices[1].x + finalVertices[2].x) /
-        3,
+        (finalVertices[0].x + finalVertices[1].x + finalVertices[2].x) / 3,
       y:
-        (finalVertices[0].y + finalVertices[1].y + finalVertices[2].y) /
-        3
+        (finalVertices[0].y + finalVertices[1].y + finalVertices[2].y) / 3
     };
     const translateAnim = createTranslatePolygonAnimation(
       ctx,
@@ -149,34 +157,10 @@ function initAnimation() {
   }
 
   const triangleMappings = [
-    {
-      T2: 1,
-      T3: 2,
-      K2: originalKite.vertices[1],
-      K3: originalKite.vertices[0],
-      color: triangleColors[0]
-    },
-    {
-      T2: 1,
-      T3: 2,
-      K2: originalKite.vertices[2],
-      K3: originalKite.vertices[1],
-      color: triangleColors[1]
-    },
-    {
-      T2: 1,
-      T3: 2,
-      K2: originalKite.vertices[3],
-      K3: originalKite.vertices[2],
-      color: triangleColors[2]
-    },
-    {
-      T2: 1,
-      T3: 2,
-      K2: originalKite.vertices[0],
-      K3: originalKite.vertices[3],
-      color: triangleColors[3]
-    }
+    { T2: 1, T3: 2, K2: originalKite.vertices[1], K3: originalKite.vertices[0], color: triangleColors[0] },
+    { T2: 1, T3: 2, K2: originalKite.vertices[2], K3: originalKite.vertices[1], color: triangleColors[1] },
+    { T2: 1, T3: 2, K2: originalKite.vertices[3], K3: originalKite.vertices[2], color: triangleColors[2] },
+    { T2: 1, T3: 2, K2: originalKite.vertices[0], K3: originalKite.vertices[3], color: triangleColors[3] }
   ];
 
   const extraAnimations = [];
@@ -192,21 +176,12 @@ function initAnimation() {
     extraAnimations.push(rotateAnim, translateAnim);
   });
 
-  // Diagonal animation (delegates arrow drawing to drawArrow.js)
-  function createDiagonalsAnimation(
-    diagonals,
-    duration,
-    lineWidth = 2,
-    color = 'red',
-    arrowSize = 8
-  ) {
+  // Diagonal animation
+  function createDiagonalsAnimation(diagonals, duration, lineWidth = 2, color = 'red', arrowSize = 8) {
     let startTime = null;
     let finished = false;
     return {
-      reset: () => {
-        startTime = null;
-        finished = false;
-      },
+      reset: () => { startTime = null; finished = false; },
       update: timestamp => {
         if (!startTime) startTime = timestamp;
         const t = Math.min((timestamp - startTime) / duration, 1);
@@ -216,8 +191,6 @@ function initAnimation() {
       draw: timestamp => {
         if (!startTime) startTime = timestamp;
         const t = Math.min((timestamp - startTime) / duration, 1);
-
-        // Draw each diagonal progressively
         diagonals.forEach(d => {
           const x2 = d.from.x + (d.to.x - d.from.x) * t;
           const y2 = d.from.y + (d.to.y - d.from.y) * t;
@@ -233,20 +206,17 @@ function initAnimation() {
   }
 
   const diagonalAnimations = [
-    createDiagonalsAnimation(
-      [
-        { from: originalKite.vertices[0], to: originalKite.vertices[2] },
-        { from: originalKite.vertices[1], to: originalKite.vertices[3] }
-      ],
-      duration
-    )
+    createDiagonalsAnimation([
+      { from: originalKite.vertices[0], to: originalKite.vertices[2] },
+      { from: originalKite.vertices[1], to: originalKite.vertices[3] }
+    ], duration)
   ];
 
   const removeTrianglesAnimation = {
     reset: () => {},
     update: () => true,
     draw: () => {
-      drawOriginalKite(); // Triangles remain visually; diagonals remain if previously drawn
+      drawOriginalKite();
       diagonalAnimations.forEach(anim => anim.drawFinal && anim.drawFinal());
     },
     drawFinal: () => {
@@ -275,21 +245,10 @@ function initAnimation() {
   ];
 
   const completedMap = [
-    [],
-    [0],
-    [0, 1],
-    [0, 1, 2],
-    [0, 1, 2, 3],
-    [0, 1, 2, 3, 4],
-    [0, 3, 4, 5],
-    [0, 3, 4, 5],
-    [0, 4, 5, 7],
-    [0, 4, 5, 7],
-    [0, 5, 7, 9],
-    [0, 5, 7, 9],
-    [0, 7, 9, 11],
-    [0, 7, 9, 11],
-    [0, 7, 9, 11, 13]
+    [], [0], [0,1], [0,1,2], [0,1,2,3], [0,1,2,3,4],
+    [0,3,4,5], [0,3,4,5], [0,4,5,7], [0,4,5,7],
+    [0,5,7,9], [0,5,7,9], [0,7,9,11], [0,7,9,11],
+    [0,7,9,11,13]
   ];
 
   controller = createAnimationController(ctx, animations, completedMap);
