@@ -1,4 +1,4 @@
-export default function createRectangleSliceSlideAnimation(
+export default function createSliceSlideAnimation(
   ctx,
   parallelogramPoints,
   rectX,
@@ -14,7 +14,7 @@ export default function createRectangleSliceSlideAnimation(
 
   const {
     strokeStyle = 'black',
-    lineWidth = 1,
+    lineWidth = 0.5, // changed from 1 to 0.5
     fillStyle = 'rgba(0, 0, 255, 0.3)',
     alpha = 1,
   } = options;
@@ -23,16 +23,13 @@ export default function createRectangleSliceSlideAnimation(
     return a + (b - a) * t;
   }
 
-  // Parallelogram corners (bottomLeft → bottomRight → topRight → topLeft)
   const bottomLeft = parallelogramPoints[0];
   const bottomRight = parallelogramPoints[1];
   const topRight = parallelogramPoints[2];
   const topLeft = parallelogramPoints[3];
 
-  // Base width (bottom edge length)
   const baseWidth = bottomRight.x - bottomLeft.x;
 
-  // Helper functions to interpolate along left edge and vertical direction
   function leftXAtT(t) {
     return lerp(bottomLeft.x, topLeft.x, t);
   }
@@ -40,19 +37,15 @@ export default function createRectangleSliceSlideAnimation(
     return lerp(bottomLeft.y, topLeft.y, t);
   }
 
-  // 1. Initial slices inside parallelogram (with slanted left edge)
+  // Original slices inside parallelogram
   const parallelogramSlices = [];
   for (let i = 0; i < slices; i++) {
     const t0 = i / slices;
     const t1 = (i + 1) / slices;
-
     const yTop = yAtT(t0);
     const yBottom = yAtT(t1);
-
     const xLeftTop = leftXAtT(t0);
     const xLeftBottom = leftXAtT(t1);
-
-    // Average to get slice’s left edge x coordinate (slanted)
     const avgLeftX = (xLeftTop + xLeftBottom) / 2;
 
     parallelogramSlices.push([
@@ -63,31 +56,66 @@ export default function createRectangleSliceSlideAnimation(
     ]);
   }
 
-  // 2. Final target slices stacked vertically (rectangle slices)
-  // Left edges all aligned vertically at bottom slice’s left edge X in rectangle
-  const bottomSliceTargetLeftX = rectX;
-
+  // Target rectangle slices
   const sliceHeight = rectHeight / slices;
-
   const targetSlices = [];
   for (let i = 0; i < slices; i++) {
     const yTop = rectY + i * sliceHeight;
     const yBottom = yTop + sliceHeight;
-
     targetSlices.push([
-      { x: bottomSliceTargetLeftX, y: yTop },                  // left-top
-      { x: bottomSliceTargetLeftX + rectWidth, y: yTop },      // right-top
-      { x: bottomSliceTargetLeftX + rectWidth, y: yBottom },   // right-bottom
-      { x: bottomSliceTargetLeftX, y: yBottom },               // left-bottom
+      { x: rectX, y: yTop },
+      { x: rectX + rectWidth, y: yTop },
+      { x: rectX + rectWidth, y: yBottom },
+      { x: rectX, y: yBottom },
     ]);
   }
 
-  // 3. Calculate horizontal shifts needed for each slice
-  // Bottom slice shift = 0 (fixed)
-  const shiftDistances = parallelogramSlices.map((slice) => {
-    const initialLeftX = slice[0].x;
-    return bottomSliceTargetLeftX - initialLeftX;
-  });
+  const shiftDistances = parallelogramSlices.map(
+    slice => rectX - slice[0].x
+  );
+
+  function drawPolygon(polygon, dx = 0) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth; // now 0.5
+    ctx.fillStyle = fillStyle;
+    ctx.beginPath();
+    polygon.forEach((pt, i) => {
+      const x = pt.x + dx;
+      const y = pt.y;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawSlicesInParallelogram() {
+    parallelogramSlices.forEach(slice => drawPolygon(slice, 0));
+  }
+
+  function drawSlicesBottomToTop(timestamp) {
+    if (startTime === null) startTime = timestamp;
+    const elapsed = timestamp - startTime;
+    const sliceDuration = duration / slices;
+
+    for (let i = 0; i < slices; i++) {
+      const sliceStart = i * sliceDuration;
+      let sliceProgress = (elapsed - sliceStart) / sliceDuration;
+      sliceProgress = Math.min(Math.max(sliceProgress, 0), 1);
+
+      if (sliceProgress > 0) {
+        drawPolygon(parallelogramSlices[i], 0);
+      }
+    }
+
+    if (elapsed >= duration) {
+      isDone = true;
+    }
+  }
 
   function reset() {
     startTime = null;
@@ -104,27 +132,6 @@ export default function createRectangleSliceSlideAnimation(
     return false;
   }
 
-  // Draw polygon shifted horizontally by dx, vertical positions unchanged
-  function drawShiftedPolygon(polygon, dx) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = strokeStyle;
-    ctx.lineWidth = lineWidth;
-    ctx.fillStyle = fillStyle;
-
-    ctx.beginPath();
-    polygon.forEach((pt, i) => {
-      const x = pt.x + dx;
-      const y = pt.y;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
-  }
-
   function draw(timestamp) {
     if (startTime === null) startTime = timestamp;
     const elapsed = timestamp - startTime;
@@ -136,16 +143,14 @@ export default function createRectangleSliceSlideAnimation(
       let sliceProgress = (elapsed - sliceStart) / sliceDuration;
       sliceProgress = Math.min(Math.max(sliceProgress, 0), 1);
 
-      // Animate horizontal shift from 0 to shiftDistances[i]
       const dx = shiftDistances[i] * sliceProgress;
-
-      drawShiftedPolygon(parallelogramSlices[i], dx);
+      drawPolygon(parallelogramSlices[i], dx);
     }
   }
 
   function drawFinal() {
     for (let i = 0; i < slices; i++) {
-      drawShiftedPolygon(parallelogramSlices[i], shiftDistances[i]);
+      drawPolygon(parallelogramSlices[i], shiftDistances[i]);
     }
   }
 
@@ -154,5 +159,7 @@ export default function createRectangleSliceSlideAnimation(
     update,
     draw,
     drawFinal,
+    drawSlicesInParallelogram,
+    drawSlicesBottomToTop,
   };
 }

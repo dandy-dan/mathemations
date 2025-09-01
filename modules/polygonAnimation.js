@@ -7,7 +7,7 @@ export default function createPolygonAnimation(ctx, points, duration = 2000, opt
     strokeStyle = 'black',
     lineWidth = 2,
     alpha = 1,
-    fillStyle,
+    fillStyle = null,   // fill only if provided
     fillDuration = 1000
   } = options;
 
@@ -30,11 +30,14 @@ export default function createPolygonAnimation(ctx, points, duration = 2000, opt
   function update(timestamp) {
     if (startTime === null) startTime = timestamp;
     const elapsed = timestamp - startTime;
-    // edges complete at progress = 1
-    // fill progresses after edges
-    progress = Math.min(elapsed / duration, 1 + fillDuration / duration);
 
-    if (progress >= 1 + fillDuration / duration) {
+    if (fillStyle) {
+      progress = Math.min(elapsed / duration, 1 + fillDuration / duration);
+    } else {
+      progress = Math.min(elapsed / duration, 1); // no fill animation
+    }
+
+    if (progress >= (fillStyle ? 1 + fillDuration / duration : 1)) {
       isDone = true;
       return true;
     }
@@ -43,9 +46,9 @@ export default function createPolygonAnimation(ctx, points, duration = 2000, opt
 
   function draw() {
     ctx.save();
+    ctx.globalAlpha = alpha;
 
     // --- Draw edges ---
-    ctx.globalAlpha = alpha;
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
 
@@ -71,16 +74,14 @@ export default function createPolygonAnimation(ctx, points, duration = 2000, opt
 
     ctx.stroke();
 
-    // --- Fill after edges ---
-    if (progress > 1) {
+    // --- Fill after edges (only if fillStyle provided) ---
+    if (fillStyle && progress > 1) {
       const fillProgress = Math.min(progress - 1, 1); // 0 → 1 over fillDuration
       ctx.globalAlpha = alpha * fillProgress;
       ctx.fillStyle = finalFillStyle;
       ctx.beginPath();
       ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
-      }
+      for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
       ctx.closePath();
       ctx.fill();
     }
@@ -92,7 +93,7 @@ export default function createPolygonAnimation(ctx, points, duration = 2000, opt
     ctx.save();
     ctx.globalAlpha = alpha;
 
-    // Edges
+    // Draw edges
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
     ctx.beginPath();
@@ -101,17 +102,14 @@ export default function createPolygonAnimation(ctx, points, duration = 2000, opt
     ctx.closePath();
     ctx.stroke();
 
-    // Fill
-    ctx.fillStyle = finalFillStyle;
-    ctx.fill();
+    // Draw fill only if provided
+    if (fillStyle) {
+      ctx.fillStyle = finalFillStyle;
+      ctx.fill();
+    }
 
     ctx.restore();
   }
 
-  return {
-    reset,
-    update,
-    draw,
-    drawFinal
-  };
+  return { reset, update, draw, drawFinal };
 }
